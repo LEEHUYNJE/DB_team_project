@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView
+    QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QScrollArea
 )
 
 class IntellectualPropertySearch(QWidget):
@@ -38,31 +38,38 @@ class IntellectualPropertySearch(QWidget):
         
         self.setLayout(layout)
     
+    def fetch_data_from_api(self, query, patent_checked, trademark_checked):
+        # 여기에 API 데이터 입력
+        patent_results = []
+        trademark_results = []
+        
+        if patent_checked:
+            patent_results = [
+                {"application_number": "2019000001", "application_date": "2020.01.01", "registration_number": "1000001", 
+                 "registration_date": "2021.01.01", "publication_number": "2000001", "publication_date": "2020.07.01", 
+                 "agent": "홍길동", "inventor": "이순신"},
+                # Add more dynamically fetched patent results here
+            ]
+        
+        if trademark_checked:
+            trademark_results = [
+                {"product_classification": "09", "applicant": "포스코", "application_number": "2019000001", "application_date": "2020.01.01", 
+                 "registration_number": "1000001", "registration_date": "2021.01.01", "application_notice_number": "2000001", 
+                 "application_notice_date": "2020.07.01", "shape_code": "B01", "agent": "홍길동"},
+                # Add more dynamically fetched trademark results here
+            ]
+        
+        return patent_results, trademark_results
+    
     def search(self):
         query = self.search_input.text()
-        patent_checked = self.patent_checkbox.isChecked()
+        patent_checked = self.patent_checkbox.isChecked() # 체크박스 체크 bool
         trademark_checked = self.trademark_checkbox.isChecked()
         
-        # Simulate search results for patents and trademarks
-        patent_results = [
-            {
-                "application_number": "2019040038976", "application_date": "1994.12.30", "registration_number": "200192150000", 
-                "registration_date": "1997.09.03", "publication_number": "2019960020475", "publication_date": "1996.07.18", 
-                "agent": "강문진", "inventor": "김기철"
-            },
-            # Add more sample patent results if needed
-        ]
-        
-        trademark_results = [
-            {
-                "product_classification": "09", "applicant": "포스코", "application_number": "2019040038976", "application_date": "1994.12.30", 
-                "registration_number": "200192150000", "registration_date": "1997.09.03", "application_notice_number": "2019960020475", 
-                "application_notice_date": "1996.07.18", "shape_code": "B23K 9/09 B23K 9/095", "agent": "강문진"
-            },
-            # Add more sample trademark results if needed
-        ]
+        patent_results, trademark_results = self.fetch_data_from_api(query, patent_checked, trademark_checked)
         
         self.result_window = ResultWindow(query, patent_results, trademark_results)
+        self.result_window.setFixedSize(1000, 800)
         self.result_window.show()
 
 class ResultWindow(QWidget):
@@ -77,7 +84,6 @@ class ResultWindow(QWidget):
         
     def initUI(self):
         self.setWindowTitle('검색 결과')
-        self.setGeometry(150, 150, 1000, 800)
         
         layout = QVBoxLayout()
         
@@ -85,10 +91,15 @@ class ResultWindow(QWidget):
         title.setStyleSheet("font-size: 24px; font-weight: bold;")
         layout.addWidget(title)
         
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_content = QWidget(scroll_area)
+        scroll_layout = QVBoxLayout(scroll_content)
+        
         if self.patent_results:
             patent_title = QLabel("---------특허권---------")
             patent_title.setStyleSheet("font-size: 20px; font-weight: bold;")
-            layout.addWidget(patent_title)
+            scroll_layout.addWidget(patent_title)
             
             patent_table = QTableWidget(self)
             patent_table.setColumnCount(8)
@@ -108,12 +119,12 @@ class ResultWindow(QWidget):
                 patent_table.setItem(row, 6, QTableWidgetItem(result["agent"]))
                 patent_table.setItem(row, 7, QTableWidgetItem(result["inventor"]))
             
-            layout.addWidget(patent_table)
+            scroll_layout.addWidget(patent_table)
         
         if self.trademark_results:
             trademark_title = QLabel("---------상표권---------")
             trademark_title.setStyleSheet("font-size: 20px; font-weight: bold;")
-            layout.addWidget(trademark_title)
+            scroll_layout.addWidget(trademark_title)
             
             trademark_table = QTableWidget(self)
             trademark_table.setColumnCount(10)
@@ -135,8 +146,10 @@ class ResultWindow(QWidget):
                 trademark_table.setItem(row, 8, QTableWidgetItem(result["shape_code"]))
                 trademark_table.setItem(row, 9, QTableWidgetItem(result["agent"]))
             
-            layout.addWidget(trademark_table)
+            scroll_layout.addWidget(trademark_table)
         
+        scroll_area.setWidget(scroll_content)
+        layout.addWidget(scroll_area)
         self.setLayout(layout)
 
 def main():
