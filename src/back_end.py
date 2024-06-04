@@ -21,11 +21,36 @@ class Database:
         self.cursor = self.connection.cursor()
     
     def fetch_trademark(self):
+        sql = "SELECT * FROM trademark"
+        self.cursor.execute(sql)
 
-        return
+        self.connection.commit()
+        data = self.cursor.fetchall()
+
+        dict_list = []
+
+        for i in data:
+            # print(i)
+            dict_list.append({"agentName" : i["agentName"], 'publicationDate': i["publicationDate"], 'publicationNumber': i["publicationNumber"], 'referenceNumber': i["referenceNumber"], 'registrationDate': i["registrationDate"], 'registrationNumber': i["registrationNumber"], 'title': i["title"], 'applicantName': i["applicantName"], 'applicationDate': i["applicationDate"], 'classificationCode': i["classificationCode"]})
+        
+        print(dict_list)
+        return dict_list
     
     def fetch_patent(self):
 
+        sql = "SELECT * FROM patent"
+        self.cursor.execute(sql)
+
+        self.connection.commit()
+        data = self.cursor.fetchall()
+
+        dict_list = []
+
+        for i in data:
+            # print(i)
+            dict_list.append({'applicantName' : i['applicantName'], 'registrationNumber' : i['registratinoNumber'], 'registerStatus' : i['registerStatus'], 'applicationDate' : i['applicationDate'], 'applicationNumber' : i["applicationNumber"], 'inventionTitle' : i["inventionTitle"], "openDate" : i["openDate"], "openNumber" : i["openNumber"], "publicationNumber" : i["publicationNumber"], "publishDate" : i["publishDate"]})
+
+        print("dict_list")
         return
     
     def update_trademark(self):
@@ -36,14 +61,6 @@ class Database:
 
         return
     
-    def search_trademark(self):
-        
-        return
-    
-    def search_patent(self):
-
-        return
-
     def get_kipris_data_patent(self):
 
         for i in range(1,50):
@@ -129,8 +146,9 @@ class Database:
         self.connection.close()
         return
     
-# database = Database()
+database = Database()
 
 # database.get_kipris_data_trademark()
+database.fetch_trademark()
 
     
