@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QScrollArea
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QScrollArea, QComboBox, QMessageBox
 )
 from back_end import Database  # 백엔드 모듈 임포트
 
@@ -15,9 +15,18 @@ class IntellectualPropertySearch(QWidget):
         
         layout = QVBoxLayout()
         
+        header_layout = QHBoxLayout()
         title = QLabel('지식 재산권 검색 서비스')
         title.setStyleSheet("font-size: 28px; font-weight: bold;")
-        layout.addWidget(title)
+        header_layout.addWidget(title)
+        
+        admin_button = QPushButton('관리자', self)
+        admin_button.setStyleSheet("font-size: 18px; padding: 10px;")
+        admin_button.clicked.connect(self.open_admin_page)
+        header_layout.addWidget(admin_button)
+        
+        header_layout.addStretch()
+        layout.addLayout(header_layout)
         
         self.search_input = QLineEdit(self)
         self.search_input.setPlaceholderText('원하시는 상품, 특허를 입력하세요')
@@ -44,6 +53,11 @@ class IntellectualPropertySearch(QWidget):
         
         self.setLayout(layout)
     
+    def open_admin_page(self):
+        self.admin_window = AdminPage()
+        self.admin_window.setFixedSize(400, 300)
+        self.admin_window.show()
+
     def fetch_data_from_backend(self, query, patent_checked, trademark_checked):
         db = Database()
         patent_results = []
@@ -159,6 +173,85 @@ class ResultWindow(QWidget):
         scroll_area.setWidget(scroll_content)
         layout.addWidget(scroll_area)
         self.setLayout(layout)
+
+class AdminPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('관리자 페이지')
+        
+        layout = QVBoxLayout()
+        
+        # Registration number input
+        self.reg_num_input = QLineEdit(self)
+        self.reg_num_input.setPlaceholderText('Registration Number')
+        layout.addWidget(self.reg_num_input)
+        
+        # Patent or Trademark selection
+        self.type_selector = QComboBox(self)
+        self.type_selector.addItem('특허권')
+        self.type_selector.addItem('상표권')
+        self.type_selector.currentIndexChanged.connect(self.update_attributes)
+        layout.addWidget(self.type_selector)
+        
+        # Attribute selection
+        self.attribute_selector = QComboBox(self)
+        layout.addWidget(self.attribute_selector)
+        
+        # Value input
+        self.value_input = QLineEdit(self)
+        self.value_input.setPlaceholderText('Value')
+        layout.addWidget(self.value_input)
+        
+        # Update button
+        update_button = QPushButton('Update', self)
+        update_button.clicked.connect(self.update_record)
+        layout.addWidget(update_button)
+        
+        self.setLayout(layout)
+        
+        self.update_attributes()  # Initialize attributes based on the default selection
+
+    def update_attributes(self):
+        self.attribute_selector.clear()
+        if self.type_selector.currentText() == '특허권':
+            attributes = ['applicantName', 'registrationNumber', 'registerStatus', 'applicationDate', 'applicationNumber', 'inventionTitle', 'openDate', 'openNumber', 'publicationNumber', 'publishDate']
+        else:
+            attributes = ['agentName', 'publicationDate', 'publicationNumber', 'referenceNumber', 'registrationDate', 'registrationNumber', 'title', 'applicantName', 'applicationDate', 'classificationCode']
+        self.attribute_selector.addItems(attributes)
+
+    def update_record(self):
+        db = Database()
+        reg_num = self.reg_num_input.text()
+        record_type = self.type_selector.currentText()
+        attribute = self.attribute_selector.currentText()
+        value = self.value_input.text()
+        
+        if record_type == '특허권':
+            result = db.update_patent(reg_num, attribute, value)
+        else:
+            result = db.update_trademark(reg_num, attribute, value)
+        
+        if result == 0:
+            self.show_error_message("존재하지 않는 등록번호입니다")
+        else:
+            self.show_info_message("성공적으로 업데이트되었습니다")
+
+    def show_error_message(self, message):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText(message)
+        msg.setWindowTitle("Error")
+        msg.exec_()
+        
+    def show_info_message(self, message):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText(message)
+        msg.setWindowTitle("Info")
+        msg.exec_()
 
 def main():
     app = QApplication(sys.argv)

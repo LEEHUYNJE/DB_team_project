@@ -1,9 +1,7 @@
 import pymysql
 import pymysql.cursors
-
 import requests
 import json
-
 from xml.etree.ElementTree import parse, fromstring
 import xml.etree.ElementTree as ET
 
@@ -17,10 +15,9 @@ class Database:
             port=3305,
             cursorclass=pymysql.cursors.DictCursor
         )
-
         self.cursor = self.connection.cursor()
 
-    def fetch_trademark(self, query):
+    def fetch_trademark(self, query=None):
         if query:
             sql = "SELECT * FROM trademark WHERE title LIKE %s"
             self.cursor.execute(sql, ('%' + query + '%',))
@@ -32,7 +29,6 @@ class Database:
         data = self.cursor.fetchall()
 
         dict_list = []
-
         for i in data:
             dict_list.append({
                 "agentName": i.get("agentName", ""),
@@ -46,10 +42,9 @@ class Database:
                 'applicationDate': str(i.get("applicationDate", "")),
                 'classificationCode': i.get("classificationCode", "")
             })
-
         return dict_list
 
-    def fetch_patent(self, query):
+    def fetch_patent(self, query=None):
         if query:
             sql = "SELECT * FROM patent WHERE inventionTitle LIKE %s"
             self.cursor.execute(sql, ('%' + query + '%',))
@@ -61,7 +56,6 @@ class Database:
         data = self.cursor.fetchall()
 
         dict_list = []
-
         for i in data:
             dict_list.append({
                 'applicantName': i.get('applicantName', ""),
@@ -75,14 +69,31 @@ class Database:
                 "publicationNumber": i.get("publicationNumber", 0),
                 "publishDate": str(i.get("publishDate", ""))
             })
-
         return dict_list
 
-    def update_trademark(self):
-        return
+    def update_patent_record(self, registration_number, attribute, value):
+        sql = f"UPDATE patent SET {attribute} = %s WHERE registrationNumber = %s"
+        self.cursor.execute(sql, (value, registration_number))
+        self.connection.commit()
+        return self.cursor.rowcount
 
-    def update_patent(self):
-        return
+    def update_trademark_record(self, registration_number, attribute, value):
+        sql = f"UPDATE trademark SET {attribute} = %s WHERE registrationNumber = %s"
+        self.cursor.execute(sql, (value, registration_number))
+        self.connection.commit()
+        return self.cursor.rowcount
+
+    def update_trademark(self, registration_number, attribute, value):
+        sql = f"UPDATE trademark SET {attribute} = %s WHERE registrationNumber = %s"
+        self.cursor.execute(sql, (value, registration_number))
+        self.connection.commit()
+        return self.cursor.rowcount
+
+    def update_patent(self, registration_number, attribute, value):
+        sql = f"UPDATE patent SET {attribute} = %s WHERE registrationNumber = %s"
+        self.cursor.execute(sql, (value, registration_number))
+        self.connection.commit()
+        return self.cursor.rowcount
 
     def get_kipris_data_patent(self):
         for i in range(1, 50):
