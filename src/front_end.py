@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QScrollArea
 )
+from back_end import Database  # 백엔드 모듈 임포트
 
 class IntellectualPropertySearch(QWidget):
     def __init__(self):
@@ -38,35 +39,25 @@ class IntellectualPropertySearch(QWidget):
         
         self.setLayout(layout)
     
-    def fetch_data_from_api(self, query, patent_checked, trademark_checked):
-        # 여기에 API 데이터 입력
+    def fetch_data_from_backend(self, patent_checked, trademark_checked):
+        db = Database()
         patent_results = []
         trademark_results = []
         
         if patent_checked:
-            patent_results = [
-                {"application_number": "2019000001", "application_date": "2020.01.01", "registration_number": "1000001", 
-                 "registration_date": "2021.01.01", "publication_number": "2000001", "publication_date": "2020.07.01", 
-                 "agent": "홍길동", "inventor": "이순신"},
-                # Add more dynamically fetched patent results here
-            ]
+            patent_results = db.fetch_patent()
         
         if trademark_checked:
-            trademark_results = [
-                {"product_classification": "09", "applicant": "포스코", "application_number": "2019000001", "application_date": "2020.01.01", 
-                 "registration_number": "1000001", "registration_date": "2021.01.01", "application_notice_number": "2000001", 
-                 "application_notice_date": "2020.07.01", "shape_code": "B01", "agent": "홍길동"},
-                # Add more dynamically fetched trademark results here
-            ]
+            trademark_results = db.fetch_trademark()
         
         return patent_results, trademark_results
     
     def search(self):
         query = self.search_input.text()
-        patent_checked = self.patent_checkbox.isChecked() # 체크박스 체크 bool
+        patent_checked = self.patent_checkbox.isChecked()
         trademark_checked = self.trademark_checkbox.isChecked()
         
-        patent_results, trademark_results = self.fetch_data_from_api(query, patent_checked, trademark_checked)
+        patent_results, trademark_results = self.fetch_data_from_backend(patent_checked, trademark_checked)
         
         self.result_window = ResultWindow(query, patent_results, trademark_results)
         self.result_window.setFixedSize(1000, 800)
@@ -102,22 +93,24 @@ class ResultWindow(QWidget):
             scroll_layout.addWidget(patent_title)
             
             patent_table = QTableWidget(self)
-            patent_table.setColumnCount(8)
+            patent_table.setColumnCount(10)
             patent_table.setHorizontalHeaderLabels([
-                '출원번호', '출원일자', '등록번호', '등록일자', '공개번호', '공개일자', '대리인', '발명자'
+                '출원인', '등록번호', '등록상태', '출원일자', '출원번호', '발명의 명칭', '공개일자', '공개번호', '공표번호', '공표일자'
             ])
             patent_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             patent_table.setRowCount(len(self.patent_results))
             
             for row, result in enumerate(self.patent_results):
-                patent_table.setItem(row, 0, QTableWidgetItem(result["application_number"]))
-                patent_table.setItem(row, 1, QTableWidgetItem(result["application_date"]))
-                patent_table.setItem(row, 2, QTableWidgetItem(result["registration_number"]))
-                patent_table.setItem(row, 3, QTableWidgetItem(result["registration_date"]))
-                patent_table.setItem(row, 4, QTableWidgetItem(result["publication_number"]))
-                patent_table.setItem(row, 5, QTableWidgetItem(result["publication_date"]))
-                patent_table.setItem(row, 6, QTableWidgetItem(result["agent"]))
-                patent_table.setItem(row, 7, QTableWidgetItem(result["inventor"]))
+                patent_table.setItem(row, 0, QTableWidgetItem(result["applicantName"]))
+                patent_table.setItem(row, 1, QTableWidgetItem(str(result["registrationNumber"])))
+                patent_table.setItem(row, 2, QTableWidgetItem(result["registerStatus"]))
+                patent_table.setItem(row, 3, QTableWidgetItem(str(result["applicationDate"])))
+                patent_table.setItem(row, 4, QTableWidgetItem(str(result["applicationNumber"])))
+                patent_table.setItem(row, 5, QTableWidgetItem(result["inventionTitle"]))
+                patent_table.setItem(row, 6, QTableWidgetItem(str(result["openDate"])))
+                patent_table.setItem(row, 7, QTableWidgetItem(str(result["openNumber"])))
+                patent_table.setItem(row, 8, QTableWidgetItem(str(result["publicationNumber"])))
+                patent_table.setItem(row, 9, QTableWidgetItem(str(result["publishDate"])))
             
             scroll_layout.addWidget(patent_table)
         
@@ -129,22 +122,22 @@ class ResultWindow(QWidget):
             trademark_table = QTableWidget(self)
             trademark_table.setColumnCount(10)
             trademark_table.setHorizontalHeaderLabels([
-                '상품분류', '출원인', '출원번호', '출원일자', '등록번호', '등록일자', '출원공고번호', '출원공고일자', '도형코드', '대리인'
+                '대리인', '공고일자', '공고번호', '참조번호', '등록일자', '등록번호', '상표명', '출원인', '출원일자', '상품분류'
             ])
             trademark_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             trademark_table.setRowCount(len(self.trademark_results))
             
             for row, result in enumerate(self.trademark_results):
-                trademark_table.setItem(row, 0, QTableWidgetItem(result["product_classification"]))
-                trademark_table.setItem(row, 1, QTableWidgetItem(result["applicant"]))
-                trademark_table.setItem(row, 2, QTableWidgetItem(result["application_number"]))
-                trademark_table.setItem(row, 3, QTableWidgetItem(result["application_date"]))
-                trademark_table.setItem(row, 4, QTableWidgetItem(result["registration_number"]))
-                trademark_table.setItem(row, 5, QTableWidgetItem(result["registration_date"]))
-                trademark_table.setItem(row, 6, QTableWidgetItem(result["application_notice_number"]))
-                trademark_table.setItem(row, 7, QTableWidgetItem(result["application_notice_date"]))
-                trademark_table.setItem(row, 8, QTableWidgetItem(result["shape_code"]))
-                trademark_table.setItem(row, 9, QTableWidgetItem(result["agent"]))
+                trademark_table.setItem(row, 0, QTableWidgetItem(result.get("agentName", "")))
+                trademark_table.setItem(row, 1, QTableWidgetItem(str(result["publicationDate"])))
+                trademark_table.setItem(row, 2, QTableWidgetItem(str(result["publicationNumber"])))
+                trademark_table.setItem(row, 3, QTableWidgetItem(result.get("referenceNumber", "")))
+                trademark_table.setItem(row, 4, QTableWidgetItem(str(result["registrationDate"])))
+                trademark_table.setItem(row, 5, QTableWidgetItem(str(result["registrationNumber"])))
+                trademark_table.setItem(row, 6, QTableWidgetItem(result["title"]))
+                trademark_table.setItem(row, 7, QTableWidgetItem(result["applicantName"]))
+                trademark_table.setItem(row, 8, QTableWidgetItem(str(result["applicationDate"])))
+                trademark_table.setItem(row, 9, QTableWidgetItem(result["classificationCode"]))
             
             scroll_layout.addWidget(trademark_table)
         

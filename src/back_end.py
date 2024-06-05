@@ -11,10 +11,10 @@ class Database:
     def __init__(self):
         self.connection = pymysql.connect(host='localhost',
                              user='root',
-                             password='COLTm1911a1',
-                             
+                             password='1234',
+                        
                              database='db_ajou',
-                             port=3306,
+                             port=3305,
                              cursorclass=pymysql.cursors.DictCursor)
         
 
@@ -30,10 +30,19 @@ class Database:
         dict_list = []
 
         for i in data:
-            # print(i)
-            dict_list.append({"agentName" : i["agentName"], 'publicationDate': i["publicationDate"], 'publicationNumber': i["publicationNumber"], 'referenceNumber': i["referenceNumber"], 'registrationDate': i["registrationDate"], 'registrationNumber': i["registrationNumber"], 'title': i["title"], 'applicantName': i["applicantName"], 'applicationDate': i["applicationDate"], 'classificationCode': i["classificationCode"]})
+            dict_list.append({
+                "agentName": i["agentName"],
+                'publicationDate': i["publicationDate"],
+                'publicationNumber': i["publicationNumber"],
+                'referenceNumber': i["referenceNumber"],
+                'registrationDate': i["registrationDate"],
+                'registrationNumber': i["registrationNumber"],
+                'title': i["title"],
+                'applicantName': i["applicantName"],
+                'applicationDate': i["applicationDate"],
+                'classificationCode': i["classificationCode"]
+            })
         
-        print(dict_list)
         return dict_list
     
     def fetch_patent(self):
@@ -47,34 +56,32 @@ class Database:
         dict_list = []
 
         for i in data:
-            # print(i)
-            dict_list.append({'applicantName' : i['applicantName'], 'registrationNumber' : i['registratinoNumber'], 'registerStatus' : i['registerStatus'], 'applicationDate' : i['applicationDate'], 'applicationNumber' : i["applicationNumber"], 'inventionTitle' : i["inventionTitle"], "openDate" : i["openDate"], "openNumber" : i["openNumber"], "publicationNumber" : i["publicationNumber"], "publishDate" : i["publishDate"]})
+            dict_list.append({
+                'applicantName': i['applicantName'],
+                'registrationNumber': i['registrationNumber'],
+                'registerStatus': i['registerStatus'],
+                'applicationDate': i['applicationDate'],
+                'applicationNumber': i["applicationNumber"],
+                'inventionTitle': i["inventionTitle"],
+                "openDate": i["openDate"],
+                "openNumber": i["openNumber"],
+                "publicationNumber": i["publicationNumber"],
+                "publishDate": i["publishDate"]
+            })
 
-        print("dict_list")
-        return
-    
+        return dict_list
+
     def update_trademark(self):
-
         return
     
     def update_patent(self):
-
         return
     
     def get_kipris_data_patent(self):
-
-        for i in range(1,50):
-
+        for i in range(1, 50):
             url = "http://plus.kipris.or.kr/kipo-api/kipi/patUtiModInfoSearchSevice/getAdvancedSearch?astrtCont=발명&inventionTitle=센서&ServiceKey=j0VWdt=ivH6agdzPYqVaLjk4QiMFeNITpFlFxsP0a0I=&pageNo=" + str(i)
-
             response = requests.get(url)
-            
-            # print(response.text)
-
             tree = ET.fromstring(response.text)
-            # print(tree.items)
-
-
             patents = tree.find("body").find("items")
 
             sql = "INSERT INTO patent (applicantName, registrationNumber, registerStatus, applicationDate, applicationNumber, inventionTitle, openDate, openNumber, publicationNumber, publishDate) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
@@ -91,38 +98,21 @@ class Database:
                 publicationNumber = patent.find("publicationNumber").text
                 publishDate = patent.find("publicationDate").text
 
-                
                 if str(publicationNumber) == "None":
                     publicationNumber = '0'
-
                 if str(registrationNumber) == "None":
                     registrationNumber = '0'
 
-                # print(type(applicantName), type(registrationNumber), type(registerStatus), type(applicationDate), type(applicationNumber), type(inventionTitle), type(openDate), type(openNumber), type(publicationNumber), type(publishDate))
-                
-                # %s, %d, %s, %s, %d, %s, %s, %d, %d, %s
-
-                # print((applicantName, registrationNumber, registerStatus, applicationDate, applicationNumber, inventionTitle, openDate, openNumber, publicationNumber, publishDate))
-
                 self.cursor.execute(sql, (applicantName, registrationNumber, registerStatus, applicationDate, applicationNumber, inventionTitle, openDate, openNumber, publicationNumber, publishDate))
-
-                print(sql, (applicantName, registrationNumber, registerStatus, applicationDate, applicationNumber, inventionTitle, openDate, openNumber, publicationNumber, publishDate))
                 self.connection.commit()
         self.connection.close()
         return
     
     def get_kipris_data_trademark(self):
-
-        for i in range(1,10):
-
+        for i in range(1, 10):
             url = "http://plus.kipris.or.kr/kipo-api/kipi/trademarkInfoSearchService/getAdvancedSearch?applicantName=가방&application=true&registration=true&refused=true&expiration=true&withdrawal=true&publication=true&cancel=true&abandonment=true&trademark=true&serviceMark=true&businessEmblem=true&collectiveMark=true&geoOrgMark=true&trademarkServiceMark=true&certMark=true&geoCertMark=true&internationalMark=true&character=true&figure=true&compositionCharacter=true&figureComposition=true&fragrance=true&sound=true&color=true&colorMixed=true&dimension=true&hologram=true&invisible=true&motion=true&visual=true&ServiceKey=j0VWdt=ivH6agdzPYqVaLjk4QiMFeNITpFlFxsP0a0I=&pageNo=" + str(i)
-
             response = requests.get(url)
-
-            print(response.text)
-            
             tree = ET.fromstring(response.text)
-
             trademarks = tree.find("body").find("items")
 
             sql = "INSERT INTO trademark (agentName, publicationDate, publicationNumber, referenceNumber, registrationDate, registrationNumber, title, applicantName, applicationDate, classificationCode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
@@ -138,17 +128,10 @@ class Database:
                 applicantName = trademark.find("applicantName").text
                 applicationDate = trademark.find("applicationDate").text
                 classificationCode = trademark.find("classificationCode").text
-                print((agentName, publicationDate, publicationNumber, referenceNumber, registrationDate, registrationNumber, title, applicantName, applicationDate, classificationCode))
 
                 self.cursor.execute(sql, (agentName, publicationDate, publicationNumber, referenceNumber, registrationDate, registrationNumber, title, applicantName, applicationDate, classificationCode))
-
                 self.connection.commit()
         self.connection.close()
         return
     
 database = Database()
-
-# database.get_kipris_data_trademark()
-database.fetch_trademark()
-
-    
