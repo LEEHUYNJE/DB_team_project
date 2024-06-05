@@ -37,18 +37,23 @@ class IntellectualPropertySearch(QWidget):
         search_button.clicked.connect(self.search)
         layout.addWidget(search_button)
         
+        view_all_button = QPushButton('전체 확인', self)
+        view_all_button.setStyleSheet("font-size: 18px; padding: 10px;")
+        view_all_button.clicked.connect(self.view_all)
+        layout.addWidget(view_all_button)
+        
         self.setLayout(layout)
     
-    def fetch_data_from_backend(self, patent_checked, trademark_checked):
+    def fetch_data_from_backend(self, query, patent_checked, trademark_checked):
         db = Database()
         patent_results = []
         trademark_results = []
         
         if patent_checked:
-            patent_results = db.fetch_patent()
+            patent_results = db.fetch_patent(query)
         
         if trademark_checked:
-            trademark_results = db.fetch_trademark()
+            trademark_results = db.fetch_trademark(query)
         
         return patent_results, trademark_results
     
@@ -57,9 +62,19 @@ class IntellectualPropertySearch(QWidget):
         patent_checked = self.patent_checkbox.isChecked()
         trademark_checked = self.trademark_checkbox.isChecked()
         
-        patent_results, trademark_results = self.fetch_data_from_backend(patent_checked, trademark_checked)
+        patent_results, trademark_results = self.fetch_data_from_backend(query, patent_checked, trademark_checked)
         
         self.result_window = ResultWindow(query, patent_results, trademark_results)
+        self.result_window.setFixedSize(1000, 800)
+        self.result_window.show()
+    
+    def view_all(self):
+        patent_checked = self.patent_checkbox.isChecked()
+        trademark_checked = self.trademark_checkbox.isChecked()
+        
+        patent_results, trademark_results = self.fetch_data_from_backend("", patent_checked, trademark_checked)
+        
+        self.result_window = ResultWindow("전체 확인", patent_results, trademark_results)
         self.result_window.setFixedSize(1000, 800)
         self.result_window.show()
 
